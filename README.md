@@ -50,7 +50,8 @@ files.download("result.png")
 
 Where: 
 
- content_image is the name of your content image including extension (e.g content.jpg). 
- style_image is the name of your style image including extension (e.g style.jpg).
+```content_image``` is the name of your content image including extension (e.g content.jpg). 
+
+```style_image``` is the name of your style image including extension (e.g style.jpg).
 
 After that result image will start downloading.
