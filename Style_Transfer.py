@@ -31,98 +31,6 @@ Conv_2_1 is the first convolutional layer in the second stack.The deepest convol
 **Note: This is a general code you can change the model, weights and the selected layers
 """
 
-<<<<<<< HEAD:Style_Transfer.py
-=======
-# Import resources
-
-from PIL import Image
-import matplotlib.pyplot as plt
-import numpy as np
-
-import torch
-import torch.optim as optim
-from torchvision import transforms, models
-
-
-
-def load_image(img_path, max_size=400, shape=None):
-    """
-    Loading image:
-
-    `load_image` is a helper function.
-    It will load the image from `img_path` path and then preprocess the image.
-    We process the image because the model accepts a specific format for its input.
-
-    This function will do certain steps:
-
-    1- Load the image from `img_path` path.
-       We will use `Image.open` from Pillow library. After that, we convert it to `RGB` photo using `convert`. 
-    2- We put a threshold for the size of the image using `max_size` function argument.
-       Big images will slow processing. So if our image size is bigger than the `max_size` then we will crop it.
-    3- We will use `transform` object to preprocess the image. it will do three operations.
-       First, it will resize the image size to `size`.
-       Then, it will convert this image into a tensor.
-       Finally, it will normalize the produced tensor (The first parameter is a tuple of means for every channel and the second parameter is the corresponding standard deviations.).
-    4- Finally, we will discard the alpha channel and add one dimension for the batch number.
-    """
-    
-    image = Image.open(img_path).convert('RGB')
-    
-    # Large images will slow down processing
-    if max(image.size) > max_size:
-        size = max_size
-    else:
-        size = max(image.size)
-    
-    if shape is not None:
-        size = shape
-        
-    in_transform = transforms.Compose([
-                        transforms.Resize(size),
-                        transforms.ToTensor(),
-                        transforms.Normalize((0.485, 0.456, 0.406), 
-                                             (0.229, 0.224, 0.225))])
-
-    # Discard the transparent, alpha channel (that's the :3) and add the batch dimension
-    image = in_transform(image)[:3,:,:].unsqueeze(0)
-    
-    return image
-
-
-def get_images(content_image_path, style_image_path):
-    """
-    This function will load content and style images.
-    Make sure to pass a correct path for your image.
-    Because the two images can be different in their size, we will resize the style image to match the content image.
-    """
-    
-    content = load_image(content_image_path).to(device)
-    
-    # Resize style to match content.
-    style = load_image(style_image_path, shape=content.shape[-2:]).to(device)
-
-    return content, style
-
-
-
-def im_convert(tensor):
-    """ 
-    This is a helper function.
-    It will un-normalize an image and convert it from a Tensor image to a NumPy image for displaying it.
-    """
-    
-    image = tensor.to("cpu").clone().detach()
-    image = image.numpy().squeeze()
-    image = image.transpose(1,2,0)
-    image = image * np.array((0.229, 0.224, 0.225)) + np.array((0.485, 0.456, 0.406))
-    image = image.clip(0, 1)
-
-    return image
-
-
-
-
->>>>>>> opengenus/master:Neural_Style_Transfer.py
 def get_features(image, model, layers=None):
     """ 
     This function will return the features maps produced by the layers in `layers` dictionary.
@@ -237,14 +145,10 @@ def style_transfer(content, style, model, steps, content_weight, style_weight, s
     # Getting features
     content_features, style_features, style_grams = get_content_and_style_features(content, style, model, layers)
 
-<<<<<<< HEAD:Style_Transfer.py
     # ten precent of steps
     ten_percent = int(0.1*steps)
 
     # iteration hyperparameters
-=======
-    # Iteration hyperparameters
->>>>>>> opengenus/master:Neural_Style_Transfer.py
     optimizer = optim.Adam([target], lr=0.003)
 
     print("Processing: ")
@@ -292,12 +196,9 @@ def style_transfer(content, style, model, steps, content_weight, style_weight, s
         if ii%ten_percent == 0: 
             print("{}%".format(int(ii*100.0/steps)))
         
-<<<<<<< HEAD:Style_Transfer.py
-        # display intermediate images and print the loss
-        '''
-=======
+
         # Display intermediate images and print the loss
->>>>>>> opengenus/master:Neural_Style_Transfer.py
+        '''
         if  ii % show_every == 0:
             print('Total loss: ', total_loss.item())
             plt.imshow(im_convert(target))
@@ -305,89 +206,3 @@ def style_transfer(content, style, model, steps, content_weight, style_weight, s
         '''
             
     return target 
-
-<<<<<<< HEAD:Style_Transfer.py
-            
-
-
-=======
-"""
-********************************************************************************************
-Here we you must load your model. In this example, we are using VGG19 model.
-
-Any model has two parts.The first part consists of convolutional layers
-and the second part is two fully connected layers and it acts as a classifier.
-Here we just want to get the feature maps produced by the convolutional layers so we will load the first part only.
-
-The model will be loaded from torchvision pre-trained models.
-Also, we will freeze the parameters of the convolutional layers
-because we don't want them to be changed and we are only changing the target image.
-*********************************************************************************************
-"""
-
-# Loading the first part
-vgg = models.vgg19(pretrained=True).features
-
-# Freezing the parameters
-for param in vgg.parameters():
-    param.requires_grad_(False)
-    
-# Move the model to GPU, if available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-vgg.to(device)
-
-'''
-******************************************
-Here we load our content and style images.
-******************************************
-'''
-content, style = get_images(content_image_path="content.jpg", style_image_path="style.jpg")
-
-"""
-*********************************************************************************************************
-Weights:  
-We have two kinds of weights:
-1- Style representation weights.
-You can put weights for the layers that are used to calculate the Gram matrix. 
-
-2- Style and content loss weights.
-We use the value that are mentioned in the paper. This ratio will affect the stylization of the final image.
-It's recommended that you leave the content_weight = 1 and set the style_weight to achieve the ratio you want.
-*************************************************************************************************************
-"""
-
-# Weights for each style layer 
-# Weighting earlier layers more will result in *larger* style artifacts
-# Notice we are excluding `conv4_2` our content representation
-style_weights = {'conv1_1': 1.,
-                 'conv2_1': 0.8,
-                 'conv3_1': 0.5,
-                 'conv4_1': 0.3,
-                 'conv5_1': 0.1}
-
-content_weight = 1  # alpha
-style_weight = 1e6  # beta
-
-"""
-****************************************************************
-The defalut value for layers will be used if we don't pass the last parameter
-layers = {'0': 'conv1_1',
-                  '5': 'conv2_1',
-                 '10': 'conv3_1',
-                 '19': 'conv4_1',
-                 '21': 'conv4_2',
-                 '28' : 'conv5_1'}
-In order to change it you must define your layers dictionary and then pass it as a final parameter. 
-**************************************************************                 
-"""
-steps = 2000
-
-target = style_transfer(content, style, vgg, steps, content_weight, style_weight, style_weights)
-
-# Display content and final, target image
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
-ax1.imshow(im_convert(content))
-ax2.imshow(im_convert(target))
->>>>>>> opengenus/master:Neural_Style_Transfer.py
-
